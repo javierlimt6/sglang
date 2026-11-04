@@ -72,6 +72,14 @@ class Device(msgspec.Struct):
         "Set soft watchdog timeout in seconds. If a forward batch takes longer than this, the server will dump information for debugging.",
     ] = None
     sleep_on_idle: A[bool, "Reduce CPU usage when sglang is idle."] = False
+    enable_scheduler_shm_sync: A[
+        bool,
+        "Run the scheduler's per-step TP syncs (the request broadcast and the "
+        "HiCache ready counts) through a shared-memory table instead of gloo when "
+        "every rank of the group is on one host. Waiting ranks spin instead of "
+        "sleeping. Has no effect with --sleep-on-idle. Same as "
+        "SGLANG_OPT_SCHEDULER_SHM_SYNC=1.",
+    ] = False
     use_ray: A[
         bool,
         "Use Ray actors for scheduler process management.",

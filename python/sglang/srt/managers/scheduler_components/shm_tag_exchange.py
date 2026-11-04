@@ -13,10 +13,11 @@ loads and stores. The table is double-buffered by sequence parity: a rank can
 reuse a slot only after every rank has published the next call, which a rank
 does only after it has finished reading the previous call.
 
-Enabled by SGLANG_OPT_SCHEDULER_SHM_SYNC=1 (default off). Groups that span hosts
-keep the stock gloo path unless SGLANG_OPT_SCHEDULER_SHM_SYNC_MULTIHOST=1 is also
-set: then each host exchanges through shared memory and only the host leaders
-meet in one small gloo all_gather (HierTagExchange).
+Enabled by --enable-scheduler-shm-sync or SGLANG_OPT_SCHEDULER_SHM_SYNC=1 (default
+off). Groups that span hosts keep the stock gloo path unless
+SGLANG_OPT_SCHEDULER_SHM_SYNC_MULTIHOST=1 is also set: then each host exchanges
+through shared memory and only the host leaders meet in one small gloo all_gather
+(HierTagExchange).
 """
 
 from __future__ import annotations
@@ -271,10 +272,14 @@ def get_shm_exchange(
         return None
     key = (id(group), kind)
     if key not in _EXCHANGES:
+        device = get_device()
         if (
-            not envs.SGLANG_OPT_SCHEDULER_SHM_SYNC.get()
+            not (
+                envs.SGLANG_OPT_SCHEDULER_SHM_SYNC.get()
+                or device.enable_scheduler_shm_sync
+            )
             # an idle rank 0 sleeps in its poller; the waiting ranks would spin meanwhile
-            or get_device().sleep_on_idle
+            or device.sleep_on_idle
             or dist.get_world_size(group) <= 1
         ):
             _EXCHANGES[key] = None
